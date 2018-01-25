@@ -4,18 +4,32 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"log/syslog"
 	"net"
 	"net/textproto"
+	"os"
 	"os/exec"
 )
 
 func main() {
+	pid := fmt.Sprintf("%d", os.Getpid())
+	err := ioutil.WriteFile("/var/run/av_server.pid", []byte(pid), 0644)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	logwriter, e := syslog.New(syslog.LOG_NOTICE, "av_server")
 	if e == nil {
 		log.SetOutput(logwriter)
 	}
+	file, err := os.Open("/opt/kaspersky/kav4fs/bin/kav4fs-control")
+	if err != nil {
+		fmt.Println("kav binary not installed")
+		log.Fatalln("kav binary not installed")
+	}
+	file.Close()
 	fmt.Printf("starting server...  ")
 	socket, err := net.Listen("tcp", ":55111")
 	if err != nil {

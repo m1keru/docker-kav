@@ -1,0 +1,4 @@
+#!/bin/bash
+CFILE=$1
+GW=$(netstat -rn |grep UG|awk '{print $2}')
+/bin/echo ${CFILE} |nc $GW 55111 

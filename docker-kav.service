@@ -1,0 +1,12 @@
+[Unit]
+Description=Kaspersky Socket Server
+After=kav4fs-supervisor.service network.target
+
+[Service]
+Type=simple
+PIDFile=/var/run/docker-kav.pid
+ExecStart=/usr/local/bin/docker-kav
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
