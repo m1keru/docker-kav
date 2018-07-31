@@ -11,7 +11,35 @@ import (
 	"net/textproto"
 	"os"
 	"os/exec"
+	"time"
+	. "github.com/blacked/go-zabbix"
+	"strings"
+	"strconv"
 )
+
+const (
+	defaultHost  = `system-001`
+	defaultPort  = 10051
+)
+
+func sendToZabbix(checkDuration int64){
+	fqdn, err := os.Hostname()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	strDuration := strconv.FormatInt(checkDuration, 10)
+	hostname := strings.Split(fqdn,".")[0]
+	log.Printf("sending metrics to zabbix server %s : %s", defaultHost, string(strDuration))
+	var metrics []*Metric
+	metrics = append(metrics, NewMetric(hostname, "avcheck.duration", string(strDuration), time.Now().Unix()))
+	packet := NewPacket(metrics)
+	z := NewSender(defaultHost, defaultPort)
+	resp , err  := z.Send(packet)
+	if err != nil {
+		log.Println("unable to send data to zabbix server" + err.Error())
+	}
+	log.Printf("resp: %s", string(resp))
+}
 
 func main() {
 	pid := fmt.Sprintf("%d", os.Getpid())
@@ -55,14 +83,16 @@ func handleConection(conn net.Conn) {
 	var stdout bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
-
+	// Меряем время исполнения
+	start := time.Now()
 	if err := cmd.Run(); err != nil {
 		fmt.Println("error on exec: ", err.Error())
 		log.Println(err.Error(), stderr.String())
 		conn.Write([]byte(stderr.String()))
 	}
-
-	log.Printf("%s\n%s", filename, stdout.String())
+	milliseconds := int64( time.Since(start)/ time.Millisecond)
+	sendToZabbix(milliseconds)
+	log.Printf("%s time:%d \n%s\n", filename, milliseconds ,stdout.String())
 	conn.Write([]byte(stdout.String()))
 	conn.Close()
 }
