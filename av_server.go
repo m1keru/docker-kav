@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	. "github.com/blacked/go-zabbix"
 	"io/ioutil"
 	"log"
 	"log/syslog"
@@ -11,30 +12,29 @@ import (
 	"net/textproto"
 	"os"
 	"os/exec"
-	"time"
-	. "github.com/blacked/go-zabbix"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
-	defaultHost  = `system-001`
-	defaultPort  = 10051
+	defaultHost = `system-001`
+	defaultPort = 10051
 )
 
-func sendToZabbix(checkDuration int64){
+func sendToZabbix(checkDuration int64) {
 	fqdn, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	strDuration := strconv.FormatInt(checkDuration, 10)
-	hostname := strings.Split(fqdn,".")[0]
+	hostname := strings.Split(fqdn, ".")[0]
 	log.Printf("sending metrics to zabbix server %s : %s", defaultHost, string(strDuration))
 	var metrics []*Metric
 	metrics = append(metrics, NewMetric(hostname, "avcheck.duration", string(strDuration), time.Now().Unix()))
 	packet := NewPacket(metrics)
 	z := NewSender(defaultHost, defaultPort)
-	resp , err  := z.Send(packet)
+	resp, err := z.Send(packet)
 	if err != nil {
 		log.Println("unable to send data to zabbix server" + err.Error())
 	}
@@ -52,7 +52,7 @@ func main() {
 	if e == nil {
 		log.SetOutput(logwriter)
 	}
-	file, err := os.Open("/opt/kaspersky/kav4fs/bin/kav4fs-control")
+	file, err := os.Open("/opt/kaspersky/kesl/bin/kesl-control")
 	if err != nil {
 		fmt.Println("kav binary not installed")
 		log.Fatalln("kav binary not installed")
@@ -78,7 +78,7 @@ func handleConection(conn net.Conn) {
 	textReader := textproto.NewReader(reader)
 	filename, _ := textReader.ReadLine()
 	fmt.Println(filename)
-	cmd := exec.Command("/opt/kaspersky/kav4fs/bin/kav4fs-control", "--action=Remove", "--scan-file="+filename)
+	cmd := exec.Command("/opt/kaspersky/kesl/bin/kesl-control", "--action", "Remove", "--scan-file", filename)
 	var stderr bytes.Buffer
 	var stdout bytes.Buffer
 	cmd.Stderr = &stderr
@@ -90,9 +90,9 @@ func handleConection(conn net.Conn) {
 		log.Println(err.Error(), stderr.String())
 		conn.Write([]byte(stderr.String()))
 	}
-	milliseconds := int64( time.Since(start)/ time.Millisecond)
+	milliseconds := int64(time.Since(start) / time.Millisecond)
 	sendToZabbix(milliseconds)
-	log.Printf("%s time:%d \n%s\n", filename, milliseconds ,stdout.String())
+	log.Printf("%s time:%d \n%s\n", filename, milliseconds, stdout.String())
 	conn.Write([]byte(stdout.String()))
 	conn.Close()
 }
