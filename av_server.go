@@ -77,8 +77,7 @@ func handleConection(conn net.Conn) {
 	reader := bufio.NewReader(conn)
 	textReader := textproto.NewReader(reader)
 	filename, _ := textReader.ReadLine()
-	fmt.Println(filename)
-	cmdLine := "/opt/kaspersky/kesl/bin/kesl-control --scan-file " + filename + "  --action Remove  | iconv -f iso-8859-5 -t utf-8"
+	cmdLine := "/opt/kaspersky/kesl/bin/kesl-control --scan-file " + filename // + " --action Remove  | iconv -f iso-8859-5 -t utf-8"
 	cmd := exec.Command("/bin/bash", "-c", cmdLine)
 	var stderr bytes.Buffer
 	var stdout bytes.Buffer
@@ -92,8 +91,9 @@ func handleConection(conn net.Conn) {
 		conn.Write([]byte(stderr.String()))
 	}
 	milliseconds := int64(time.Since(start) / time.Millisecond)
+	//fmt.Printf("filename: %s duration: %d milliseconds \n", filename, milliseconds)
 	sendToZabbix(milliseconds)
-	log.Printf("%s time:%d \n%s\n", filename, milliseconds, stdout.String())
+	fmt.Printf("%s time:%d \n", filename, milliseconds)
 	conn.Write([]byte(stdout.String()))
 	conn.Close()
 }
