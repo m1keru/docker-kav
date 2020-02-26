@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	zabbix "github.com/blacked/go-zabbix"
 	"io/ioutil"
 	"log"
 	"log/syslog"
@@ -15,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	zabbix "github.com/blacked/go-zabbix"
 )
 
 const (
